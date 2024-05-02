@@ -14,11 +14,22 @@ const urlsRequireLogin = [
   "https://localhost:3698/accounts",
 ];
 
-async function performLogin(page) {
-  await page.goto("https://localhost:3698/auth/login");
-  await page.fill("#username", "Administrator");
-  await page.fill("#password", "1234");
-  await Promise.all([page.waitForNavigation(), page.click("#loginBtn")]);
+async function performLogin(
+  page,
+  loginUrl,
+  usernameSelector,
+  passwordSelector,
+  loginButtonSelector,
+  username,
+  password
+) {
+  await page.goto(loginUrl);
+  await page.fill(usernameSelector, username);
+  await page.fill(passwordSelector, password);
+  await Promise.all([
+    page.waitForNavigation(),
+    page.click(loginButtonSelector),
+  ]);
 
   const userInfo = await page.$eval("#userInfo", (el) => el.textContent.trim());
   if (!userInfo) {
@@ -42,9 +53,7 @@ async function runAccessibilityCheck(page, url, tags) {
     /[^a-z0-9]/gi,
     "_"
   )}.html`;
-  if (!fs.existsSync(reportPath)) {
-    fs.mkdirSync("build/reports", { recursive: true });
-  }
+  fs.mkdirSync("build/reports", { recursive: true });
   fs.writeFileSync(reportPath, reportHTML);
 
   expect(accessibilityScanResults.violations).toEqual([]);
@@ -68,7 +77,7 @@ test.describe("accessibility check", () => {
     test(`Verify there is no accessibility issues at ${url} after login`, async ({
       page,
     }) => {
-      await performLogin(page);
+      await performLogin(page, "https://localhost:3698/auth/login", "#username", "#password", "#loginBtn", "Administrator", "1234");
       await runAccessibilityCheck(page, url, [
         "wcag2a",
         "wcag21a",
